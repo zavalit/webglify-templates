@@ -1,13 +1,12 @@
 {
   "name": "webglify",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Bootstrap webgl related templates",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "webglify" : "./src/cli.js"
+    "webglify": "./webglify.js"
   },
   "repository": {
     "type": "git",
@@ -22,5 +21,12 @@
   "bugs": {
     "url": "https://github.com/zavalit/webglify/issues"
   },
-  "homepage": "https://github.com/zavalit/webglify#readme"
+  "homepage": "https://github.com/zavalit/webglify#readme",
+  "devDependencies": {
+    "prettier": "^2.8.7",
+    "prettier-plugin-glsl": "^0.0.9"
+  },
+  "dependencies": {
+    "fs-extra": "^11.1.1"
+  }
 }

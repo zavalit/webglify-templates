@@ -19,7 +19,9 @@ if (!fs.existsSync(srcDir)) {
 }
 
 // obtain destination project name
-const projectName = 'webglified'
+const n = process.argv.find(arg => arg.split('=')[0] == '-n')
+const projectName = n?.split('=')[1] ||'webglified'
+
 
 
 

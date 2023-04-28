@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zavalit/webglify.git"
+    "url": "git+https://github.com/zavalit/webglify-templates.git"
   },
   "keywords": [
     "webgl",
@@ -19,9 +19,9 @@
   "author": "Seva Dolgopolov",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/zavalit/webglify/issues"
+    "url": "https://github.com/zavalit/webglify-templates/issues"
   },
-  "homepage": "https://github.com/zavalit/webglify#readme",
+  "homepage": "https://github.com/zavalit/webglify-templates#readme",
   "devDependencies": {
     "prettier": "^2.8.7",
     "prettier-plugin-glsl": "^0.0.9"

@@ -4,6 +4,7 @@ type WebGLFactoryPops = {
   fragmentShader: string;
   width?: number;
   height?: number;
+  textures?: WebGLTexture[]
 };
 
 const MOUSE_COORDS = {
@@ -11,6 +12,7 @@ const MOUSE_COORDS = {
   y: 0
 }
 
+const devicePixelRatio = Math.min(window.devicePixelRatio, 2);
 
 export default (
   { gl, vertexShader, fragmentShader, ...props }: WebGLFactoryPops,
@@ -20,7 +22,6 @@ export default (
   const height = props.height || window.innerHeight;
 
   const specifyCanvasSize = () => {
-    const devicePixelRatio = Math.min(window.devicePixelRatio, 2);
     const canvas = gl.canvas as HTMLCanvasElement;
     canvas.style.width = width.toString();
     canvas.style.height = height.toString();
@@ -38,8 +39,8 @@ export default (
     const {top, bottom, left} =  (gl.canvas as HTMLCanvasElement).getBoundingClientRect()
     const height = bottom - top;
     const fromTop = ev.clientY - top;
-    MOUSE_COORDS.x = ev.clientX - left
-    MOUSE_COORDS.y = height - fromTop;
+    MOUSE_COORDS.x = (left - ev.clientX) / width
+    MOUSE_COORDS.y = (fromTop - height) / height
   }
 
 
@@ -89,6 +90,29 @@ export default (
   const u3 = gl.getUniformLocation(prog, "uMouse");
   gl.uniform2fv(u3, [MOUSE_COORDS.x, MOUSE_COORDS.y]);
 
+  // GUI Parameters
+  const paramsKeys = Object.keys(PARAMS);
+  const pLocs: {[k: string]: {loc: WebGLUniformLocation, method: string}} = Object.keys(PARAMS).reduce((acc, key) => {
+    
+    const loc = gl.getUniformLocation(prog, `u${key.charAt(0).toUpperCase() + key.slice(1)}`)
+    if( typeof PARAMS[key] === 'number'){
+      const method = 'uniform1f'
+      acc[key] = {loc, method}      
+    }
+    
+    return acc
+  }, {}) 
+
+  // Textures
+  props.textures && props.textures.forEach((texture: WebGLTexture, i: number) => {
+    const textureLocation = gl.getUniformLocation(prog, `uTexture${i}`);
+    gl.uniform1i(textureLocation, i);
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+  })
+  
+
+
   // draw
   const animate = (time: number) => {
     requestAnimationFrame(animate);
@@ -99,6 +123,11 @@ export default (
   const step = (time: number) => {
     gl.uniform1f(u2, time);
     gl.uniform2fv(u3, [MOUSE_COORDS.x, MOUSE_COORDS.y]);
+
+    paramsKeys.forEach(key => {
+      gl[pLocs[key].method](pLocs[key].loc, PARAMS[key]);
+    })
+
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   };
 
@@ -111,3 +140,54 @@ export default (
     step,
   };
 };
+
+
+function loadImage(url, callback) {
+  const image = new Image();
+  image.src = url;
+  image.onload = () => callback(image);
+  return image;
+}
+
+
+function createTexture(gl: WebGL2RenderingContext, image, settings?: (gl:WebGL2RenderingContext, image) => void) {
+  
+  const texture = gl.createTexture();
+
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  settings && settings(gl, image) || (() => {
+  
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+    // Set texture parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  
+  })()
+  
+  gl.bindTexture(gl.TEXTURE_2D, null)
+
+  return  texture;
+
+}
+
+
+
+
+export const loadTexture = (gl, url) => new Promise((res, _) => loadImage(url, image => res(createTexture(gl, image))));
+
+export const loadSVGTexture = (gl, svgString) => {
+  const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+  return loadTexture(gl, svgDataUrl);
+}
+
+export const loadCanvasTexture = (gl, canvas) => {
+  return Promise.resolve(createTexture(gl, canvas));
+}
+
+
